@@ -25,6 +25,8 @@ See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), [MODEL_LICENSES.md](MODEL_
 
 ## Implementation and publication boundary
 
+RapidRAW by Timon Käch and contributors was a workflow reference through a hands-on review of version 1.6.5, particularly its scopes, component controls and export feedback. [Project](https://github.com/CyberTimon/RapidRAW). LumaLab implements these additions independently; RapidRAW source code and artwork are not bundled.
+
 Camera Raw / Lightroom were feature and behavior references; limited read-only native analysis informed research and numerical experiments. This was **not a formal clean-room process**, and the project does not claim access to Adobe source or a complete reconstruction of Adobe algorithms. Proprietary binaries, decompiled listings, research dumps, original test photographs and session backups are excluded from this public source publication. Publicly licensed Adobe DNG SDK fragments remain inside upstream LibRaw with their original notices.
 
 LumaLab is not affiliated with Adobe, Apple, Microsoft, Google or the model publishers. It does not use Firefly, cloud Generative Remove, OpenCV or SciPy at runtime, and does not promise Camera Raw performance or identical pixels.
@@ -56,6 +58,8 @@ LumaLab is not affiliated with Adobe, Apple, Microsoft, Google or the model publ
 安装过某项技能不等于实际使用过它。项目记录确认使用了 REA，不声称所有可用技能都参与了开发。内置演示图与图标来自仓库中的程序化绘图代码，不是下载的照片或图像生成模型输出。
 
 ### 实现与公开范围
+
+RapidRAW（Timon Käch 与贡献者）也作为操作流程参考：实际体验了 1.6.5 版本的颜色分析、蒙版组成管理和导出反馈。这些新增功能由 LumaLab 独立实现，没有打包 RapidRAW 源码或美术资源。[原始项目](https://github.com/CyberTimon/RapidRAW)。
 
 Camera Raw / Lightroom 用作功能与行为参考，有限的只读原生分析为研究和数值实验提供线索。开发过程**不是正式的净室实现流程**，也不声称取得了 Adobe 源码或完整还原其算法。
 

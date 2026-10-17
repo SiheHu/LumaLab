@@ -21,14 +21,16 @@ LumaLab brings global adjustments, precise local masks, local content removal an
 |---|---|
 | Develop a photo | Exposure, white balance, smooth RGB curves with histograms, HSL, color grading, detail, grain and vignette |
 | Edit locally | Brush / Erase, Linear / Radial / Rectangle Gradients, Color / Luminance Range, Add / Subtract / Intersect, local HSL |
-| Understand masks | Per-mask Overlay Color, Overlay / Handles switches, B/W Coverage, Group / Merge, Auto Mask Brush; overlaps display together |
+| Understand masks | Per-mask Overlay Color, Overlay / Handles switches, B/W Coverage, Group / Merge, Auto Mask Brush, component duplicate / invert; overlaps display together |
 | Select people and scenes | Subject, People, Background, Sky and **All Skin**; optional Face, Face / Neck Skin, Hair, Eyes, Glasses and Lips |
 | Remove distractions | Clone, local Heal and local LaMa Content Remove, with editable strokes and source controls |
 | Compose | Crop, rotation, perspective, Auto Crop, synchronized Split / Reference View, trackpad Zoom / Pan |
-| Reuse a look | Built-in / custom Presets, Preset Amount, 3D `.cube` LUT Import and Amount |
+| Reuse a look | Photo-based Preset previews, search, categories / author credits, Preset Amount; 3D `.cube` LUT Import and global-color Export |
 | Combine photos | Mean / Median / Sigma-clipped Denoise, Star Trails, HDR Fusion with Deghost, Focus Stacking and Projective Panorama |
 | Manage work | Ratings / keywords / albums, selective Batch Sync, Adaptive Mask Sync, History, Snapshots and Virtual Copies |
-| Check and export | ICC Soft Proofing / Gamut Warning; JPEG, PNG and 8/16-bit TIFF; export color space, resize, sharpening and watermark |
+| Check and export | ICC Soft Proofing / Gamut Warning, optional Waveform / RGB Parade / Vectorscope; JPEG, PNG and 8/16-bit TIFF, estimated file size, separate GPS removal, color space, resize, sharpening and watermark |
+
+LUT Export includes pointwise global color transforms in sRGB, excluding local masks, repairs, geometry and spatial effects. File-size estimates use encoded samples and may differ from final output. Preset thumbnails are generated locally in memory and are not embedded in exported preset files.
 
 ### Originals and saved edits
 

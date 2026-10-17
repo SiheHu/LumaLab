@@ -33,10 +33,13 @@ extension EditorModel {
         workspace.library.removeAll { paths.contains($0.path) }; librarySelection.subtract(paths)
         persistWorkspace(); status = "已从照片库移除引用，原始文件未删除"
     }
-    func saveUserPreset(name: String) {
+    func saveUserPreset(name: String, category:String = "自定义", author:String = "") {
         let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return }
-        workspace.presets.append(UserPreset(name: clean, state: edits)); persistWorkspace(); status = "预设已保存"
+        var preset=UserPreset(name:clean,state:edits)
+        preset.category=category.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty ? "自定义":String(category.prefix(80))
+        preset.author=String(author.prefix(120))
+        workspace.presets.append(preset); persistWorkspace(); status = "预设已保存"
     }
     func applyUserPreset(_ preset: UserPreset, includeGeometry: Bool = false, includeMasks: Bool = false) {
         let base=edits

@@ -110,6 +110,8 @@ struct PresetCreationPanel: View {
     @ObservedObject var model: EditorModel
     var close: () -> Void
     @State private var name = ""
+    @State private var category = "自定义"
+    @State private var author = ""
     @FocusState private var nameFocused: Bool
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -117,10 +119,12 @@ struct PresetCreationPanel: View {
             Text(L("保存当前颜色与效果，之后可在左侧预设栏用于其他照片。"))
                 .font(.callout).foregroundStyle(Palette.muted)
             TextField(L("预设名称"), text: $name).textFieldStyle(.roundedBorder).focused($nameFocused)
+            TextField(L("分类"),text:$category).textFieldStyle(.roundedBorder)
+            TextField(L("作者（可选）"),text:$author).textFieldStyle(.roundedBorder)
             HStack {
                 Spacer()
                 Button(L("取消"), action: close).keyboardShortcut(.cancelAction)
-                Button(L("添加")) { model.saveUserPreset(name: name); close() }
+                Button(L("添加")) { model.saveUserPreset(name:name,category:category,author:author); close() }
                     .keyboardShortcut(.defaultAction)
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
@@ -151,7 +155,7 @@ struct VersionsPanel: View {
                 if tab == 0 {
                     if model.workspace.presets.isEmpty { Text(L("还没有自定义预设。调整照片后，可将当前颜色和效果保存为预设。")).foregroundStyle(Palette.muted) }
                     ForEach(model.workspace.presets) { preset in
-                        HStack { Text(preset.name); Spacer(); Button(L("应用颜色")) { model.applyUserPreset(preset) }; Menu(L("更多")) { Button(L("应用全部参数")) { model.applyUserPreset(preset, includeGeometry: true, includeMasks: true) }; Button(L("导出预设…")) { model.exportUserPreset(preset) }; Button(L("删除预设")) { model.deleteUserPreset(preset.id) } } }
+                        HStack { Text(preset.name); Spacer(); Button(L("应用颜色")) { model.applyUserPreset(preset) }; Menu(L("更多")) { Button(L("应用全部参数")) { model.applyUserPreset(preset, includeGeometry: true, includeMasks: true) }; Button(L("编辑分类与作者…")) { model.presentPresetDetails(preset) }; Button(L("导出预设…")) { model.exportUserPreset(preset) }; Button(L("删除预设")) { model.deleteUserPreset(preset.id) } } }
                     }
                 } else if tab == 1 {
                     ForEach(model.snapshots) { snapshot in HStack { Text(snapshot.name); Spacer(); Button(L("恢复")) { model.restoreSnapshot(snapshot) }; Button(L("删除")) { model.deleteSnapshot(snapshot.id) } } }
@@ -192,7 +196,14 @@ struct ExportPanel: View {
                 AdjustmentSlider(title:"输出锐化",value:$model.exportOptions.outputSharpening,range:0...100,commit:{})
                 TextField(L("文字水印（留空则不添加）"), text: $model.exportOptions.watermark).textFieldStyle(.roundedBorder)
                 Toggle(L("保留拍摄信息与关键词"), isOn: $model.exportOptions.includeMetadata)
+                Toggle(L("移除 GPS 位置信息"), isOn: $model.exportOptions.removeGPS).disabled(!model.exportOptions.includeMetadata)
             }.font(.system(size: 12))
+            HStack {
+                if model.estimatePending {ProgressView().controlSize(.small);Text(L("正在估算文件大小…"))}
+                else if let bytes=model.exportEstimate {Text(L("预计文件大小：约 \(ByteCountFormatter.string(fromByteCount:bytes,countStyle:.file))"))}
+                else if model.estimateFailed {Text(L("暂时无法估算；仍可正常导出"))}
+            }.font(.system(size:11)).foregroundStyle(Palette.muted)
+            Text(L("小样本编码估算，纹理、颗粒和压缩方式会影响实际大小。")).font(.system(size:9)).foregroundStyle(Palette.muted)
             Divider()
             HStack {
                 Menu(L("载入导出预设")) { ForEach(model.workspace.exportPresets) { preset in Button(preset.name) { model.exportOptions = preset.options } } }
@@ -200,7 +211,10 @@ struct ExportPanel: View {
                 Button(L("保存预设")) { model.saveExportPreset(name: presetName); presetName = "" }.disabled(presetName.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             HStack { Text(L("当前处理使用独立算法；16 位输出可保留更多处理精度，但不会恢复已丢失的原始细节。")).font(.system(size: 10)).foregroundStyle(Palette.muted); Spacer(); Button(L(model.isExporting ? "正在导出…" : "选择位置并导出…")) { model.exportCurrent() }.buttonStyle(.borderedProminent).disabled(model.isExporting) }
-        }.padding(26).frame(width: 650, height: 520).background(Palette.panel).preferredColorScheme(.dark)
+        }.padding(26).frame(width: 650, height: 610)
+            .onAppear {model.requestExportEstimate()}
+            .onChange(of:model.exportOptions) {_ in model.requestExportEstimate()}
+            .onDisappear {model.cancelExportEstimate()}.background(Palette.panel).preferredColorScheme(.dark)
     }
 }
 

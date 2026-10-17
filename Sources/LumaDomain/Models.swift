@@ -273,6 +273,7 @@ package struct MaskComponent: Codable, Equatable, Identifiable {
     package var id = UUID()
     package var kind: MaskKind = .brush
     package var operation: MaskOperation = .add
+    package var inverted = false
     package var feather: Double = 0.75
     package var brushSize: Double = 0.07
     package var brushVersion: Int? = 2
@@ -323,9 +324,10 @@ package struct ExportOptions: Codable, Equatable {
     package var outputSharpening: Double = 0
     package var watermark = ""
     package var includeMetadata = true
+    package var removeGPS = true
 
-    package init(format: OutputFormat = .jpeg, quality: Double = 0.95, bitDepth: Int = 8, colorSpace: OutputColorSpace = .sRGB, longEdge: Int = 0, dontEnlarge: Bool = true, outputSharpening: Double = 0, watermark: String = "", includeMetadata: Bool = true) {
-        self.format = format; self.quality = quality; self.bitDepth = bitDepth; self.colorSpace = colorSpace; self.longEdge = longEdge; self.dontEnlarge = dontEnlarge; self.outputSharpening = outputSharpening; self.watermark = watermark; self.includeMetadata = includeMetadata
+    package init(format: OutputFormat = .jpeg, quality: Double = 0.95, bitDepth: Int = 8, colorSpace: OutputColorSpace = .sRGB, longEdge: Int = 0, dontEnlarge: Bool = true, outputSharpening: Double = 0, watermark: String = "", includeMetadata: Bool = true, removeGPS: Bool = true) {
+        self.format = format; self.quality = quality; self.bitDepth = bitDepth; self.colorSpace = colorSpace; self.longEdge = longEdge; self.dontEnlarge = dontEnlarge; self.outputSharpening = outputSharpening; self.watermark = watermark; self.includeMetadata = includeMetadata; self.removeGPS = removeGPS
     }
 }
 
@@ -479,13 +481,14 @@ extension LocalMask {
 
 
 extension MaskComponent {
-    private enum CodingKeys:String,CodingKey {case id,kind,operation,feather,brushSize,brushVersion,raster,edgeStrokes,start,end,strokes,erasedStrokes,flow,density,rangeColor,rangeTolerance,luminanceLow,luminanceHigh}
+    private enum CodingKeys:String,CodingKey {case id,kind,operation,inverted,feather,brushSize,brushVersion,raster,edgeStrokes,start,end,strokes,erasedStrokes,flow,density,rangeColor,rangeTolerance,luminanceLow,luminanceHigh}
     package init(from decoder:Decoder) throws {
         self.init()
         let c=try decoder.container(keyedBy:CodingKeys.self)
         id=try c.decodeIfPresent(UUID.self,forKey:.id) ?? id
         kind=try c.decodeIfPresent(type(of:kind),forKey:.kind) ?? kind
         operation=try c.decodeIfPresent(type(of:operation),forKey:.operation) ?? operation
+        inverted=try c.decodeIfPresent(Bool.self,forKey:.inverted) ?? false
         feather=try c.decodeIfPresent(type(of:feather),forKey:.feather) ?? feather
         brushSize=try c.decodeIfPresent(type(of:brushSize),forKey:.brushSize) ?? brushSize
         brushVersion=try c.decodeIfPresent(Int.self,forKey:.brushVersion) ?? 1
@@ -501,5 +504,25 @@ extension MaskComponent {
         rangeTolerance=try c.decodeIfPresent(type(of:rangeTolerance),forKey:.rangeTolerance) ?? rangeTolerance
         luminanceLow=try c.decodeIfPresent(type(of:luminanceLow),forKey:.luminanceLow) ?? luminanceLow
         luminanceHigh=try c.decodeIfPresent(type(of:luminanceHigh),forKey:.luminanceHigh) ?? luminanceHigh
+    }
+}
+
+
+extension ExportOptions {
+    private enum CodingKeys: String, CodingKey { case format, quality, bitDepth, colorSpace, longEdge, dontEnlarge, outputSharpening, watermark, includeMetadata, removeGPS }
+    package init(from decoder: Decoder) throws {
+        self.init()
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        format = try c.decodeIfPresent(OutputFormat.self, forKey: .format) ?? format
+        quality = try c.decodeIfPresent(Double.self, forKey: .quality) ?? quality
+        bitDepth = try c.decodeIfPresent(Int.self, forKey: .bitDepth) ?? bitDepth
+        colorSpace = try c.decodeIfPresent(OutputColorSpace.self, forKey: .colorSpace) ?? colorSpace
+        longEdge = try c.decodeIfPresent(Int.self, forKey: .longEdge) ?? longEdge
+        dontEnlarge = try c.decodeIfPresent(Bool.self, forKey: .dontEnlarge) ?? dontEnlarge
+        outputSharpening = try c.decodeIfPresent(Double.self, forKey: .outputSharpening) ?? outputSharpening
+        watermark = try c.decodeIfPresent(String.self, forKey: .watermark) ?? watermark
+        includeMetadata = try c.decodeIfPresent(Bool.self, forKey: .includeMetadata) ?? includeMetadata
+        // Old export presets retain their previous metadata policy.
+        removeGPS = try c.decodeIfPresent(Bool.self, forKey: .removeGPS) ?? false
     }
 }

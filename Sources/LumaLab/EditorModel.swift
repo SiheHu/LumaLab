@@ -13,6 +13,20 @@ final class EditorModel: ObservableObject {
     @Published var previewPixelSize = CGSize.zero
     @Published var maskOverlay: CGImage?
     @Published var histogram: [[Double]] = []
+    @Published var scopesExpanded = false { didSet { if scopesExpanded { requestScopes() } else { scopeGeneration += 1 } } }
+    @Published var scopeMode: ScopeMode = .waveform
+    @Published var scopes: ScopeAnalysis?
+    var scopeGeneration = 0
+    @Published var exportEstimate: Int64?
+    @Published var estimatePending = false
+    @Published var estimateFailed = false
+    var estimateGeneration = 0
+    var estimateWork: DispatchWorkItem?
+    @Published var presetPreviews: [String:CGImage] = [:]
+    var presetPreviewGeneration = 0
+    var presetPreviewWork: DispatchWorkItem?
+    let auxiliaryQueue = DispatchQueue(label: "com.local.lumalab.auxiliary", qos: .utility)
+    let scopeQueue = DispatchQueue(label: "com.local.lumalab.scopes", qos: .utility)
     @Published var documentID=UUID()
     @Published var sourceName = "山间晨光"
     @Published var sourceSize = CGSize.zero
@@ -40,7 +54,7 @@ final class EditorModel: ObservableObject {
     weak var editorWindow:NSWindow?
     var recoveryCompletion:(()->Void)?
     var recoveryWork:DispatchWorkItem?
-    @Published var showBefore = false
+    @Published var showBefore = false { didSet { if scopesExpanded { requestScopes() } } }
     /// View-level master switch; never overwrites the saved settings of individual masks.
     @Published var showOverlay = true {
         didSet { if oldValue != showOverlay { requestMaskOverlay() } }
@@ -193,7 +207,8 @@ final class EditorModel: ObservableObject {
         repairSearchGeneration+=1;isFindingRepairSource=false;repairDraft=[];selectedRepairID=nil;repairManualSource=nil;isPickingRepairSource=false
         automaticMaskGeneration += 1; isGeneratingMask = false; automaticMaskTask = nil
         recoveryWork?.cancel();presetBase=nil;presetTarget=nil;maskSelection=[];viewportCenter = .center
-        documentID=UUID()
+        documentID=UUID(); scopes=nil; scopeGeneration += 1; cancelExportEstimate()
+        presetPreviews=[:]; presetPreviewGeneration += 1; presetPreviewWork?.cancel()
         source = decoded.image; imageMetadata = decoded.metadata
         sourceData = data; sourceDigest = WorkflowStore.digest(data)
         sourceName = name; sourceSize = decoded.image.extent.size
@@ -469,6 +484,7 @@ final class EditorModel: ObservableObject {
                     self.preview = cg; self.beforePreview = original; self.previewPixelSize = pixelSize; self.beforeKey = before; self.beforeLimit = limit
                     self.beforeApplyCrop = applyCrop
                     self.histogram = bins; self.isRendering = false
+                    if self.scopesExpanded { self.requestScopes() }
                 }
             } catch { DispatchQueue.main.async { guard let self = self, self.generation == ticket else { return }; self.isRendering = false; self.errorMessage = error.localizedDescription } }
         }
@@ -500,7 +516,7 @@ final class EditorModel: ObservableObject {
         commit(); requestRender(); status = kind == .brush ? "在照片上涂抹，同一画笔层的重叠区域不会累计强度" : "在照片上拖动，调整选区位置与大小"
     }
     func deleteMask() { edits.masks.removeAll { $0.id == selectedMaskID }; selectedMaskID = edits.masks.last?.id; activeComponentID = nil; commit(); requestRender() }
-    func duplicateMask() { guard var mask = selectedMask else { return }; mask.id = UUID(); mask.name += " 副本"; edits.masks.append(mask); selectedMaskID = mask.id; activeComponentID = nil; commit(); requestRender() }
+    func duplicateMask() { guard var mask = selectedMask else { return }; mask.id = UUID(); mask.name += " 副本"; mask.components=mask.components.map {var copy=$0;copy.id=UUID();return copy}; edits.masks.append(mask); selectedMaskID = mask.id; activeComponentID = nil; commit(); requestRender() }
     func toggleMask(_ id: UUID) { guard let i = edits.masks.firstIndex(where: { $0.id == id }) else { return }; edits.masks[i].enabled.toggle(); commit(); requestRender() }
     func invertMask() { guard let i = selectedMaskIndex else { return }; edits.masks[i].inverted.toggle(); commit(); requestRender() }
     func clearBrush() { updateActiveShape { $0.strokes = []; $0.erasedStrokes = []; $0.edgeStrokes=[] }; commit(); requestRender() }
@@ -517,13 +533,8 @@ final class EditorModel: ObservableObject {
     }
     func applyPreset(_ name: String) {
         let base=edits
-        var a = Adjustments()
-        switch name {
-        case "柔和日光", "Soft daylight": a.exposure = 0.2; a.contrast = -12; a.highlights = -30; a.shadows = 24; a.temperature = 12; a.vibrance = 18
-        case "电影色调", "Cinematic": a.contrast = 22; a.highlights = -28; a.shadows = 14; a.temperature = -12; a.saturation = -20; a.vignette = 24
-        case "黑白", "Silver": a.saturation = -100; a.contrast = 24; a.highlights = -15; a.shadows = 16; a.clarity = 12
-        default: break
-        }
+        let aliases = ["Soft daylight":"柔和日光", "Cinematic":"电影色调", "Silver":"黑白"]
+        let a = BuiltInPreset(rawValue:aliases[name] ?? name)?.state.adjustments ?? .neutral
         edits.adjustments = a; beginPresetAmount(base:base,target:edits); commit(); requestRender(); status = "已应用\(name)"
     }
     func sample(at point: UnitPoint2D) {

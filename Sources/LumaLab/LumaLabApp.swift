@@ -6,8 +6,11 @@ import UniformTypeIdentifiers
 @main
 enum EntryPoint {
     @MainActor static func main() {
-        if CommandLine.arguments.contains(where:{["--advanced-check","--self-test","--feature-check","--repair-check","--automatic-mask-check","--content-repair-check"].contains($0)}) {
+        if CommandLine.arguments.contains(where:{["--enhancement-check","--advanced-check","--self-test","--feature-check","--repair-check","--automatic-mask-check","--content-repair-check"].contains($0)}) {
             WorkflowStore.directoryOverride=FileManager.default.temporaryDirectory.appendingPathComponent("LumaLab-Isolated-Checks-"+UUID().uuidString)
+        }
+        if CommandLine.arguments.contains("--enhancement-check") {
+            do {print(try EnhancementChecks.run());exit(0)} catch {fputs("ENHANCEMENT CHECK FAILED: \(error)\n",stderr);exit(1)}
         }
         if CommandLine.arguments.contains("--advanced-check") {
             do {print(try AdvancedChecks.run());exit(0)} catch {fputs("ADVANCED CHECK FAILED: \(error)\n",stderr);exit(1)}
@@ -28,7 +31,7 @@ enum EntryPoint {
             do { print(try AutomaticMaskChecks.run()); exit(0) } catch { fputs("AUTOMATIC MASK CHECK FAILED: \(error)\n", stderr); exit(1) }
         }
         if CommandLine.arguments.contains("--self-test") {
-            do { print(try EngineChecks.run()); print(try IOChecks.run()); print(try WorkflowChecks.run()); print(try RevisionChecks.run()); print(try DNGChecks.run()); print(try RepairChecks.run()); print(try FileSettingsChecks.run()); print(try LocalizationChecks.run()); print(try AutomaticMaskChecks.run()); print(try ContentRepairChecks.run()); print(try FeatureChecks.run()); print(try AdvancedChecks.run()); exit(0) }
+            do { print(try EngineChecks.run()); print(try IOChecks.run()); print(try WorkflowChecks.run()); print(try RevisionChecks.run()); print(try DNGChecks.run()); print(try RepairChecks.run()); print(try FileSettingsChecks.run()); print(try LocalizationChecks.run()); print(try AutomaticMaskChecks.run()); print(try ContentRepairChecks.run()); print(try FeatureChecks.run()); print(try AdvancedChecks.run()); print(try EnhancementChecks.run()); exit(0) }
             catch { fputs("SELF-TEST FAILED: \(error)\n", stderr); exit(1) }
         }
         if CommandLine.arguments.contains("--localization-check") {
@@ -94,6 +97,7 @@ struct LumaLabApp: App {
                 Button(L("导出 PNG…")) { model.exportImage(png: true) }.keyboardShortcut("e", modifiers: [.command, .shift])
                     .disabled(model.isExporting)
                 Button(L("导出 JPEG…")) { model.exportImage(png: false) }.disabled(model.isExporting)
+                Button(L("导出颜色 LUT…")) { model.exportColorLUT() }.disabled(model.isExporting)
                 Button(L("导出 TIFF…")) { model.exportOptions.format = .tiff; model.showExport = true }.disabled(model.isExporting)
             }
             CommandMenu(L("照片与版本")) {
@@ -222,6 +226,8 @@ struct EditorView: View {
                 Button(L("导出 PNG…")) { model.exportImage(png: true) }
                 Button(L("导出 JPEG…")) { model.exportImage(png: false) }
                 Button(L("导出 16 位 TIFF…")) { model.exportOptions.format = .tiff; model.exportOptions.bitDepth = 16; model.showExport = true }
+                Divider()
+                Button(L("导出颜色 LUT…")) {model.exportColorLUT()}
             } label: {
                 HStack(spacing: 8) { Text(L(model.isExporting ? "正在导出…" : "导出")); Image(systemName: "arrow.up.right") }
                     .font(.system(size: 11, weight: .semibold)).padding(.horizontal, 15).padding(.vertical, 8)
@@ -265,41 +271,11 @@ struct EditorView: View {
                 } label: { Image(systemName: "plus").frame(width: 24, height: 24).contentShape(Rectangle()) }
                     .menuStyle(.borderlessButton).fixedSize().help(L("添加预设"))
             }.padding(.bottom, 6)
-            ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 2) {
-                    ForEach(["原始", "柔和日光", "电影色调", "黑白"], id: \.self) { name in
-                        Button { model.applyPreset(name) } label: {
-                            HStack(spacing: 9) {
-                                RoundedRectangle(cornerRadius: 3)
-                                    .fill(LinearGradient(colors: lookColors(name), startPoint: .topLeading, endPoint: .bottomTrailing))
-                                    .frame(width: 25, height: 25)
-                                Text(L(name)).font(.system(size: 11))
-                                Spacer()
-                            }.foregroundStyle(Color(white: 0.72)).padding(.vertical, 4).contentShape(Rectangle())
-                        }.buttonStyle(.plain).help(L("应用整体风格，保留选区和裁剪"))
-                    }
-                    if !model.workspace.presets.isEmpty {
-                        sectionLabel("自定义").padding(.top, 10).padding(.bottom, 5)
-                        ForEach(model.workspace.presets) { preset in
-                            Button { model.applyUserPreset(preset) } label: {
-                                HStack(spacing: 9) {
-                                    Image(systemName: "slider.horizontal.3").foregroundStyle(Palette.accent).frame(width: 25, height: 25)
-                                    Text(preset.name).font(.system(size: 11)).lineLimit(1)
-                                    Spacer(minLength: 0)
-                                }.foregroundStyle(Color(white: 0.78)).padding(.vertical, 4).contentShape(Rectangle())
-                            }.buttonStyle(.plain).contextMenu {
-                                Button(L("应用颜色")) { model.applyUserPreset(preset) }
-                                Button(L("导出预设…")) { model.exportUserPreset(preset) }
-                                Button(L("删除预设")) { model.deleteUserPreset(preset.id) }
-                            }
-                        }
-                    }
-                    Button { showPresetCreation = true } label: {
-                        Label(L("保存当前为预设…"), systemImage: "plus.circle").font(.system(size: 10))
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8).contentShape(Rectangle())
-                    }.buttonStyle(.plain).foregroundStyle(Palette.accent)
-                }
-            }.scrollIndicators(.visible).frame(minHeight: 100)
+            PresetBrowser(model:model)
+            Button { showPresetCreation = true } label: {
+                Label(L("保存当前为预设…"),systemImage:"plus.circle").font(.system(size:10))
+                    .frame(maxWidth:.infinity,alignment:.leading).padding(.vertical,6).contentShape(Rectangle())
+            }.buttonStyle(.plain).foregroundStyle(Palette.accent)
             Divider().padding(.vertical, 10)
             HStack(alignment: .center, spacing: 9) {
                 if let image = model.beforePreview {

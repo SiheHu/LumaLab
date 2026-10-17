@@ -189,7 +189,8 @@ final class ImagePipeline {
             item.erasedStrokes = component.erasedStrokes; item.flow = component.flow; item.density = component.density
             item.rangeColor = component.rangeColor; item.rangeTolerance = component.rangeTolerance
             item.luminanceLow = component.luminanceLow; item.luminanceHigh = component.luminanceHigh
-            let operand = primitiveMask(item, size: size, source: source)
+            let primitive = primitiveMask(item, size: size, source: source)
+            let operand = component.inverted ? scalarMask(primitive, factor: -1, bias: 1) : primitive
             switch component.operation {
             case .add: result = result.applyingFilter("CIMaximumCompositing", parameters: [kCIInputBackgroundImageKey: operand])
             case .subtract: result = subtractKernel?.apply(extent: result.extent, arguments: [result, operand]) ?? result
@@ -383,6 +384,63 @@ final class ImagePipeline {
             .cropped(to: CGRect(x: 0, y: 0, width: requestedWidth, height: requestedHeight))
     }
 
+    /// Samples the actual pointwise color pipeline, avoiding spatial operations.
+    func globalColorLUT(edits: EditState, size: Int = 33) throws -> CubeLUT {
+        guard (2...65).contains(size) else { throw PipelineError.exportFailed }
+        let state = edits.lutExportState
+        let width = size * size, height = size
+        var pixels = [Float](); pixels.reserveCapacity(size * size * size * 4)
+        for b in 0..<size { for g in 0..<size { for r in 0..<size {
+            pixels += [Float(r)/Float(size-1), Float(g)/Float(size-1), Float(b)/Float(size-1), 1]
+        } } }
+        let data = pixels.withUnsafeBufferPointer { Data(buffer: $0) }
+        let atlas = CIImage(bitmapData: data, bytesPerRow: width*16, size: CGSize(width:width,height:height), format:.RGBAf, colorSpace:colorSpace)
+        let image = try processed(source:atlas,edits:state)
+        var output = [Float](repeating:0,count:pixels.count)
+        output.withUnsafeMutableBytes { bytes in
+            context.render(image,toBitmap:bytes.baseAddress!,rowBytes:width*16,bounds:CGRect(x:0,y:0,width:width,height:height),format:.RGBAf,colorSpace:colorSpace)
+        }
+        var values = [Float](); values.reserveCapacity(size*size*size*3)
+        for i in stride(from:0,to:output.count,by:4) { values += (0..<3).map { Float(EngineColor.clamp(Double(output[i+$0]))) } }
+        return try CubeLUT(name:"LumaLab",size:size,values:values)
+    }
+
+    func scopeAnalysis(_ image: CGImage) -> ScopeAnalysis {
+        let factor = min(1,320/Double(max(image.width,image.height)))
+        let w = max(1,Int(Double(image.width)*factor)), h = max(1,Int(Double(image.height)*factor))
+        var bytes = [UInt8](repeating:0,count:w*h*4)
+        bytes.withUnsafeMutableBytes { storage in
+            if let cg = CGContext(data:storage.baseAddress,width:w,height:h,bitsPerComponent:8,bytesPerRow:w*4,space:colorSpace,bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue) {
+                cg.draw(image,in:CGRect(x:0,y:0,width:w,height:h))
+            }
+        }
+        return ScopeAnalysis.analyze(rgba:bytes,width:w,height:h)
+    }
+
+    func estimateExport(source: CIImage, edits: EditState, options: ExportOptions, metadata: [String:Any]) throws -> Int64 {
+        let size = try outputSize(source:source,edits:edits)
+        let longest = max(size.width,size.height)
+        let factor = options.longEdge > 0 ? (options.dontEnlarge ? min(1,CGFloat(options.longEdge)/longest) : CGFloat(options.longEdge)/longest) : 1
+        let target = max(1,floor(size.width*factor))*max(1,floor(size.height*factor))
+        guard target.isFinite, target <= 100_000_000 else { throw PipelineError.exportFailed }
+        if longest*factor <= 1024 {
+            return Int64(try export(source:source,edits:edits,options:options,metadata:metadata).count)
+        }
+        var sample = options
+        let limit = min(1024,longest*factor)
+        sample.longEdge = Int(limit); sample.dontEnlarge = false
+        let encoded = try export(source:source,edits:edits,options:sample,metadata:metadata,maxDimension:limit)
+        // Metadata is a fixed overhead; measure it with the same encoder instead
+        // of multiplying it by the full-photo area ratio.
+        var plain = sample; plain.includeMetadata = false
+        let withoutMetadata = try export(source:source,edits:edits,options:plain,maxDimension:limit)
+        let overhead = max(0,encoded.count-withoutMetadata.count)
+        let samplePixels = max(1,floor(size.width*limit/longest))*max(1,floor(size.height*limit/longest))
+        let value = Double(overhead)+Double(withoutMetadata.count)*target/samplePixels
+        guard value.isFinite, value < Double(Int64.max) else { throw PipelineError.exportFailed }
+        return Int64(value.rounded())
+    }
+
     func exportPNG(source: CIImage, edits: EditState) throws -> Data {
         var options = ExportOptions(); options.format = .png
         return try export(source:source,edits:edits,options:options)
@@ -568,8 +626,8 @@ final class ImagePipeline {
         return darkened.applyingFilter("CIBlendWithMask",parameters:[kCIInputBackgroundImageKey:image,kCIInputMaskImageKey:selection]).cropped(to:bounds)
     }
 
-    func export(source: CIImage, edits: EditState, options: ExportOptions, metadata: [String:Any] = [:]) throws -> Data {
-        var image = try processed(source:source,edits:edits)
+    func export(source: CIImage, edits: EditState, options: ExportOptions, metadata: [String:Any] = [:], maxDimension: CGFloat? = nil) throws -> Data {
+        var image = try processed(source:source,edits:edits,maxDimension:maxDimension)
         if options.longEdge > 0 {
             let factor = CGFloat(options.longEdge)/max(image.extent.width,image.extent.height)
             if factor < 1 || !options.dontEnlarge {
@@ -594,7 +652,7 @@ final class ImagePipeline {
         guard let raster = context.createCGImage(image,from:image.extent,format:format,colorSpace:targetSpace) else { throw PipelineError.renderFailed }
         var properties: [CFString:Any] = [:]
         if options.includeMetadata {
-            for (key,value) in metadata where key != kCGImagePropertyOrientation as String { properties[key as CFString] = value }
+            for (key,value) in ExportMetadata.filtered(metadata, removeGPS: options.removeGPS) where key != kCGImagePropertyOrientation as String { properties[key as CFString] = value }
         }
         properties[kCGImagePropertyOrientation] = 1
         properties[kCGImagePropertyPixelWidth] = raster.width; properties[kCGImagePropertyPixelHeight] = raster.height

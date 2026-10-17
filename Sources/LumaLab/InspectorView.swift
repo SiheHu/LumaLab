@@ -12,6 +12,7 @@ struct InspectorView: View {
                 Spacer()
                 Text(L("\(model.dimensions) px")).font(.system(size: 9, design: .monospaced))
             }.foregroundStyle(Palette.muted).padding(.horizontal, 20).padding(.top, 9).padding(.bottom, 16)
+            ScopePanel(model:model)
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -353,18 +354,27 @@ private struct MaskInspector: View {
             }.buttonStyle(.plain).font(.system(size: 11))
             AdjustmentSlider(title: "选区强度", value: model.maskValue(\.opacity), range: 0...1, unit: "%", multiplier: 100, defaultValue: 1, commit: { model.commit() })
             componentControls(mask)
+            if let id=model.activeComponentID {
+                Picker(L("组合方式"),selection:Binding(get:{model.activeShape?.operation ?? .add},set:{value in model.updateActiveShape {$0.operation=value};model.commit();model.requestRender()})) {
+                    ForEach(MaskOperation.allCases) {Text(L($0.title)).tag($0)}
+                }.controlSize(.small)
+                Toggle(L("反转组成部分"),isOn:Binding(get:{model.activeShape?.inverted ?? false},set:{_ in model.invertComponent(id:id)})).toggleStyle(.checkbox).font(.system(size:10))
+            }
             shapeControls(kind: activeKind(mask))
         }
     }
     private func componentControls(_ mask: LocalMask) -> some View {
         VStack(alignment: .leading, spacing: 9) {
             Text(L("选区组成")).font(.system(size: 11, weight: .semibold))
-            componentRow(title: "基础 · \(mask.kind.title)", symbol: mask.kind.symbol, id: nil)
-            ForEach(mask.components) { component in
-                HStack(spacing: 6) {
-                    componentRow(title: "\(component.operation.title) · \(component.kind.title)", symbol: component.kind.symbol, id: component.id)
-                    Button { model.removeComponent(id: component.id) } label: { Image(systemName: "xmark").font(.system(size: 9)) }.buttonStyle(.plain).help(L("删除此组成部分"))
-                }
+            HStack {
+                componentRow(title:"基础 · \(mask.kind.title)",symbol:mask.kind.symbol,id:nil)
+                componentMenu(id:nil)
+            }
+            ForEach(Array(mask.components.enumerated()),id:\.element.id) { index,component in
+                HStack(spacing:6) {
+                    componentRow(title:"\(index+1). \(L(component.operation.title)) · \(L(component.kind.title))\(component.inverted ? " · " + L("反转") : "")",symbol:component.kind.symbol,id:component.id)
+                    componentMenu(id:component.id)
+                }.padding(.leading,10)
             }
             HStack {
                 Picker(L("组合"), selection: $operation) { ForEach(MaskOperation.allCases) { Text(L($0.title)).tag($0) } }.labelsHidden()
@@ -375,6 +385,17 @@ private struct MaskInspector: View {
             } label: { Label(L("\(operation.title)选区范围"), systemImage: operation == .add ? "plus.circle" : operation == .subtract ? "minus.circle" : "circle.grid.cross") }
                 .buttonStyle(.bordered).controlSize(.small)
         }.padding(10).background(Palette.background.opacity(0.5), in: RoundedRectangle(cornerRadius: 5))
+    }
+    private func componentMenu(id:UUID?) -> some View {
+        Menu {
+            Button(L("复制组成部分")) {model.duplicateComponent(id:id)}
+            Button(L("复制并反转组成部分")) {model.duplicateComponent(id:id,inverted:true)}
+            if let id {
+                Button(L("反转组成部分")) {model.invertComponent(id:id)}
+                Button(L("删除此组成部分")) {model.removeComponent(id:id)}
+            }
+        } label:{Image(systemName:"ellipsis.circle").frame(width:20,height:20).contentShape(Rectangle())}
+        .menuStyle(.borderlessButton).fixedSize().accessibilityLabel(L("组成部分操作"))
     }
     private func componentRow(title: String, symbol: String, id: UUID?) -> some View {
         Button { model.selectComponent(id: id) } label: {
