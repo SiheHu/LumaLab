@@ -1,42 +1,42 @@
-<p align="center"><img src="docs/assets/overview.svg" alt="LumaLab 本机照片编辑与 Mask 工作流" width="1100"></p>
+<p align="center"><img src="docs/assets/overview.zh-CN.svg" alt="光影实验室：本机照片编辑与蒙版工作流" width="1100"></p>
 
 # LumaLab · 光影实验室
 
-**在本机完成调色、Mask 与多张合成，保留可以继续修改的编辑参数。**
+**在本机完成调色、蒙版与多张合成，保留可以继续修改的编辑参数。**
 
-[English](README.md) · [Roadmap](docs/ROADMAP.md) · [Credits](CREDITS.md) · [Model License](MODEL_LICENSES.md)
+[英文说明](README.md) · [开发计划](docs/ROADMAP.md) · [致谢](CREDITS.md) · [模型授权说明](MODEL_LICENSES.md)
 
-LumaLab 是一款正在完善的桌面照片编辑器，把整体调色、局部 Mask、本机 Content Remove、多张合成和参数管理放在同一工作区。完成依赖下载后，照片处理在本机运行，不需要编辑器账号或云端 Inference 服务。
+光影实验室是一款正在完善的桌面照片编辑器，把整体调色、局部蒙版、本机内容移除、多张合成和参数管理放在同一工作区。完成依赖下载后，照片处理在本机运行，不需要编辑器账号或云端推理服务。
 
-当前提供 **macOS 开发版源码**，主要在 Apple Silicon 验证。Shared Core 已拆分，Windows UI / Renderer 仍待开发，**目前没有可运行的 Windows 版本，也暂不提供安装包**。上图为使用原创合成风景绘制的界面概览，不是真实照片或性能测试结果。
+当前提供**苹果电脑开发版源码**，主要在苹果芯片电脑上验证。共享核心已拆分，微软视窗系统的界面和渲染器仍待开发，**目前没有可运行的微软视窗版本，也暂不提供安装包**。上图为使用原创合成风景绘制的界面概览，不是真实照片或性能测试结果。
 
 ## 已实现的工作流
 
 | 工作 | 功能 |
 |---|---|
-| 整体调整 | Exposure、White Balance、带 Histogram 的平滑 RGB Curves、HSL、Color Grading、Detail、Grain、Vignette |
-| 局部 Mask | Brush / Erase、Linear / Radial / Rectangle Gradient、Color / Luminance Range、Add / Subtract / Intersect、Local HSL |
-| Mask 管理 | 每 Mask 独立 Overlay Color、Overlay / Control Points 开关，B/W Coverage、Group / Merge、Auto Mask Brush；重叠高亮正常叠加 |
-| 自动识别 | Subject、People、Background、Sky、**All Skin**；可选 Face、Face / Neck Skin、Hair、Eyes、Glasses、Lips |
-| 修复 | Clone、Heal、本机 LaMa Content Remove，保留可编辑笔触与 Source 控制 |
-| 构图与对比 | Crop、Rotation、Perspective、Auto Crop、同步 Split / Reference View、触控板 Zoom / Pan |
-| 风格复用 | 内置 / 自定义 Presets、Preset Amount、3D `.cube` LUT Import / Amount |
-| 多张合成 | Mean / Median / Sigma-clipped Denoise、Star Trails、HDR Fusion / Deghost、Focus Stacking、Projective Panorama |
-| 编辑管理 | 评分、关键词、相册、选择性 Batch Sync、Adaptive Mask Sync、History、Snapshots、Virtual Copies |
-| 检查与输出 | ICC Soft Proofing、Gamut Warning；JPEG、PNG、8/16-bit TIFF，含 Color Space、Resize、Sharpening 与 Watermark |
+| 整体调整 | 曝光、白平衡、带直方图的平滑红绿蓝曲线、色相与饱和度及明度混合、色彩分级、细节、颗粒、暗角 |
+| 局部蒙版 | 画笔、擦除、线性渐变、径向渐变、矩形渐变、颜色范围、亮度范围、添加、减去、相交，以及局部颜色混合 |
+| 蒙版管理 | 每个蒙版独立设置高亮颜色、高亮开关和控制点开关；支持黑白范围预览、分组、合并和自动边缘识别画笔，重叠高亮正常叠加 |
+| 自动识别 | 主题、人物、背景、天空、**所有皮肤**；可选面部、面部与颈部皮肤、头发、眼睛、眼镜、嘴唇 |
+| 修复 | 仿制、修复、本机模型内容移除，保留可编辑笔触与取样位置控制 |
+| 构图与对比 | 裁剪、旋转、透视、自动裁剪、同步分屏对比、参考照片对比、触控板缩放与平移 |
+| 风格复用 | 内置与自定义预设、预设强度、三维颜色查找表导入与强度调节，支持 `.cube` 文件 |
+| 多张合成 | 平均降噪、中位数降噪、剔除异常值后降噪、星轨合成、高动态范围曝光融合与去重影、景深合成、透视全景拼接 |
+| 编辑管理 | 评分、关键词、相册、选择性批量同步、自动蒙版适配同步、编辑历史、快照、虚拟副本 |
+| 检查与输出 | 色彩配置文件软打样、超出色域警告；支持 `.jpg`、`.png`、八位或十六位 `.tif` 输出，以及色彩空间、尺寸调整、锐化和水印设置 |
 
 ## 保存方式
 
-JPEG / PNG / BMP / TIFF 及支持的 RAW 按完整分辨率解码。RAW 优先用共享 LibRaw，不支持的部分变体尝试明确提示的 macOS RAW Fallback；失败时不会悄悄改用 Thumbnail。
+`.jpg`、`.png`、`.bmp`、`.tif`、数字底片 `.dng` 及支持的相机原始格式均按完整分辨率解码。相机原始格式优先使用共享解码库，不支持的部分变体会尝试明确提示的系统解码备用路径；失败时不会悄悄改用缩略图。
 
-- 普通图片按 `⌘S` 写入 `photo.ext.luma.json` Sidecar，原始图片字节不变。
-- DNG 按 `⌘S` 写入内嵌 XMP 参数，保留 RAW Pixel Payload，但文件 Metadata 会改变；测试重要原图时保留备份。
-- `.luma` Portable Project 包含源图与参数。参数属于 LumaLab 格式，不与 Adobe `crs` 互通。
-- Crash Recovery 使用独立本机记录恢复异常退出前的工作，不代替显式 Save；正常关闭仍可选 Save / Discard / Cancel。
+- 普通图片按 `⌘S` 写入 `photo.ext.luma.json` 旁车文件，原始图片字节不变。
+- 数字底片 `.dng` 按 `⌘S` 写入内嵌扩展元数据参数，保留原始像素数据，但文件元数据会改变；测试重要原图时请保留备份。
+- `.luma` 便携项目包含源图与参数。参数属于光影实验室自身格式，不能与其他编辑器的调整参数直接互通。
+- 异常恢复使用独立本机记录恢复异常退出前的工作，不代替主动保存；正常关闭仍可选择保存、放弃修改或取消关闭。
 
 ## 从源码运行
 
-需要 macOS 13+、Swift 5.9+ 的 Xcode / Command Line Tools、Python 3。依赖下载阶段需要网络；当前固定的 ONNX Runtime 为 **macOS arm64**，没有 Intel / Windows Runtime 打包流程。Subject / Background 需要 macOS 14+。
+需要苹果电脑系统第十三版或更新版本、能够执行下方 `swift` 命令且对应编译器版本不低于 5.9 的苹果开发工具或命令行工具，以及能够执行下方 `python3` 命令的第三版脚本解释器。依赖下载阶段需要网络；当前固定的本机模型运行库仅面向**苹果芯片电脑**，尚未提供英特尔电脑或微软视窗系统的运行库打包流程。主题与背景识别需要苹果电脑系统第十四版或更新版本。
 
 ```sh
 git clone https://github.com/SiheHu/LumaLab.git
@@ -46,11 +46,11 @@ python3 scripts/fetch-dependencies.py
 open dist/LumaLab.app
 ```
 
-脚本从发布者处下载并校验 ONNX Runtime、Sky、LaMa、All Skin，合计数百 MB，不进入 Git。编辑时不会下载模型或上传照片。可用 `python3 scripts/fetch-dependencies.py --verify` 离线检查已有文件。
+脚本从发布者处下载并校验本机模型运行库、天空识别模型、内容补全模型和所有皮肤识别模型，合计数百兆字节，不纳入版本库。编辑时不会下载模型或上传照片。可用 `python3 scripts/fetch-dependencies.py --verify` 离线检查已有文件。
 
-**Face Parsing 权重为可选组件。** 上游代码声明 MIT，但训练数据涉及非商业研究限制，权重的商用 / 再分发边界尚未明确。因此仓库不上传，也不默认下载。请先阅读 [MODEL_LICENSES.md](MODEL_LICENSES.md)；未安装时细分功能会说明缺少组件，All Skin 使用默认模型的较粗脸部结果。
+**面部细分模型权重为可选组件。** 上游代码声明采用宽松许可，但训练数据涉及非商业研究限制，权重的商用和再分发边界尚未明确。因此仓库不上传，也不默认下载。请先阅读[模型授权说明](MODEL_LICENSES.md)；未安装时，细分功能会提示缺少组件，所有皮肤识别使用默认模型提供的较粗脸部结果。
 
-首次启动**跟随系统语言**：中文系统偏好显示中文，否则使用 English。右上角设置或 `⌘,` 可选择中文、English、Follow System；已有明确选择继续保留。
+首次启动**跟随系统语言**：系统首选语言为中文时显示中文，否则使用英文。右上角设置或 `⌘,` 可选择中文、英文或跟随系统；已有明确选择继续保留。
 
 ## 测试与参与
 
@@ -60,20 +60,22 @@ swift run -c release LumaCoreChecks
 python3 scripts/check-publication.py
 ```
 
-完整 Image Checks 需要 macOS 图形服务与默认依赖；可选 Face 模型存在时才检查它。真实相机 DNG 可通过 `LUMALAB_DNG_FIXTURE=/绝对路径/your.dng` 自行提供，仓库不包含个人照片或 Adobe 示例素材。[测试说明](docs/TESTING.md)。
+完整图像检查需要苹果电脑系统的图形服务与默认依赖；只有可选面部模型存在时才检查该模型。真实相机数字底片可通过 `LUMALAB_DNG_FIXTURE=/绝对路径/your.dng` 自行提供，仓库不包含个人照片或其他软件的示例素材。详见[测试说明](docs/TESTING.md)。
 
-欢迎提供可复现 Bug、RAW 兼容性、复杂 Mask 边缘、色彩管理和大图性能反馈，也欢迎参与 Windows Renderer。[提交 Issue](https://github.com/SiheHu/LumaLab/issues/new?template=bug_report.yml) 时写清步骤、预期和实际结果，仅上传你有权公开的样例。[贡献说明](CONTRIBUTING.md)。
+欢迎提供可复现的缺陷、相机原始格式兼容性、复杂蒙版边缘、色彩管理和大图性能反馈，也欢迎参与微软平台渲染器开发。[提交问题](https://github.com/SiheHu/LumaLab/issues/new?template=bug_report.yml)时请写清步骤、预期和实际结果，仅上传你有权公开的样例。详见[贡献说明](CONTRIBUTING.md)。
 
-如果这个项目对你有帮助，欢迎点 Star，让更多摄影与开发者找到它；可复现反馈同样有帮助。
+如果这个项目对你有帮助，欢迎为仓库点亮星标，让更多摄影爱好者与开发者找到它；可复现的反馈同样有帮助。
 
 ## 已知边界
 
-目前不承诺 Camera Raw / Lightroom 的画质或性能等价。Glasses、反光、较小人物和复杂 Content Remove 仍可能失败；被不透明镜片挡住的眼睛无法恢复。All Skin 使用 256px Semantic Model，加上人物 Crop 和可选 Face 细化。算法更新不会自动改写已有保存 Mask，请重新生成 Automatic Mask 体验新版结果。
+目前不承诺与商业照片编辑器达到同等画质或性能。眼镜、反光、较小人物和复杂内容移除仍可能处理失败；被不透明镜片挡住的眼睛无法恢复。所有皮肤识别使用边长为 256 像素的语义分割模型，结合人物裁切和可选面部细化。算法更新不会自动改写已有保存蒙版，请重新生成自动蒙版体验新版结果。
 
-Panorama 暂为顺序重叠照片的 Planar Projective Registration / Feather Blend，可能出现视差和 Exposure Seam；Focus Stacking 可能有 Halo；HDR Fusion 输出 SDR。Lens Profile 库、32-bit HDR Export 与 Windows UI 尚未完成。[Roadmap](docs/ROADMAP.md)。
+全景拼接暂时使用顺序重叠照片的平面透视配准与羽化混合，可能出现视差和曝光接缝；景深合成可能出现光晕；高动态范围曝光融合输出标准动态范围图像。镜头配置文件库、三十二位高动态范围输出与微软平台界面尚未完成。详见[开发计划](docs/ROADMAP.md)。
 
-## License 与 Credits
+## 许可与致谢
 
-原创代码采用 **MIT**；LibRaw 选择 **CDDL-1.0**，Runtime / Model 保留各自 License，不能统一改写成 MIT。请阅读 [Third-party Notices](THIRD_PARTY_NOTICES.md)、[Model License](MODEL_LICENSES.md) 与 [完整 Credits / 开发过程](CREDITS.md)。
+原创代码采用 **MIT 许可协议**；共享原始格式解码库选择 **CDDL-1.0 许可协议**，运行库和模型保留各自许可，不能统一改写成原创代码的协议。这些协议标识保留原文，便于准确核对授权。请阅读[第三方声明](THIRD_PARTY_NOTICES.md)、[模型授权说明](MODEL_LICENSES.md)与[完整致谢及开发过程](CREDITS.md)。
 
-项目由维护者提出需求并实测，OpenAI Codex 大量参与实现；早期研究使用 `reverse-engineer-anything` Skill / REA MCP 与 Hopper，运行软件不需要这些工具。公开仓库不包含 Adobe 私有 Binary、Disassembly、测试照片或权重；LibRaw 上游包含的公开授权 DNG SDK 片段保留原始声明。项目不隶属于 Adobe 或其他依赖发布者。
+项目由维护者提出需求并实测，人工智能编程助手大量参与实现；早期研究使用逆向工程研究技能、逆向工程服务与反汇编工具，运行软件不需要这些开发工具。实际工具、模型、作者名称和授权来源均列在[完整致谢](CREDITS.md)中。
+
+公开仓库不包含商业编辑器的私有可执行文件、反汇编输出、测试照片或模型权重；解码库上游包含的公开授权数字底片开发工具包片段保留原始声明。项目不隶属于所参考的软件厂商或其他依赖发布者。
