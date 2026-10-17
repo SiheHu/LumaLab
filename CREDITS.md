@@ -29,6 +29,36 @@ Camera Raw / Lightroom were feature and behavior references; limited read-only n
 
 LumaLab is not affiliated with Adobe, Apple, Microsoft, Google or the model publishers. It does not use Firefly, cloud Generative Remove, OpenCV or SciPy at runtime, and does not promise Camera Raw performance or identical pixels.
 
-## 中文
+## 中文致谢与开发记录
 
-维护者提供需求并进行实际照片测试，Codex 参与实现与验证；REA Skill / MCP 和 Hopper 用于开发研究，均不是用户运行软件的前置条件。Runtime Model 为 Sky、LaMa、Selfie Multiclass，以及可选 Face Parsing；没有调用云端大语言模型处理照片。完整权重来源、Hash、License 和已知限制分别记录在 MODELS.json 与 MODEL_LICENSES.md。Demo 与图标来自仓库中的程序化绘图代码。
+**项目所有者与维护者：**[SiheHu](https://github.com/SiheHu)。LumaLab 是一个由人工智能辅助开发的个人照片编辑项目。维护者提出需求、进行实际编辑测试并指导迭代，欢迎贡献代码和可复现的问题反馈。
+
+### 软件运行时使用的组件
+
+- **LibRaw LLC、Dave Coffin、Jacek Gozdz、Roland Karlsson 及其原始声明中列出的其他贡献者：**提供相机 RAW 解码、去马赛克与拍摄信息读取。
+- **Microsoft 与 ONNX Runtime 贡献者：**提供本机模型推理引擎及 C 接口。仓库保留完整的上游第三方声明。
+- **Yakhyokhuja Valikhujaev / yakhyo、face-parsing.PyTorch 贡献者与 BiSeNet 研究作者：**提供可选面部细分模型。另行注明 CelebAMask-HQ 作者和数据集限制；致谢不代表已经获得该权重的再分发授权。
+- **xiongzhu666、U²-Net 作者与 voyagerfromeast：**提供天空识别模型及其 ONNX 转换。
+- **Roman Suvorov 等 LaMa 原作者与 Carve：**提供本机内容补全模型与固定尺寸的 ONNX 导出。完整作者名单见上方英文部分。[原始项目](https://github.com/advimman/lama)、[模型转换](https://huggingface.co/Carve/LaMa-ONNX)。
+- **Adel Ahmadyan、Google MediaPipe 团队、Google LLC 与 senty-au：**提供用于所有皮肤识别的多类别分割模型及其 ONNX 转换。
+- **Apple：**提供 Swift、SwiftUI、AppKit、Core Image、ImageIO、Vision、ColorSync 和系统图标。**Jean-loup Gailly 与 Mark Adler：**提供 zlib。
+
+各组件的授权范围以[第三方声明](THIRD_PARTY_NOTICES.md)、[模型授权说明](MODEL_LICENSES.md)和原始许可文件为准。列出名称不代表这些作者或厂商为本项目背书。
+
+### 人工智能辅助、技能与研究工具
+
+- **OpenAI Codex：**参与设计、Swift / C / C++ 实现、测试、文档与本机界面检查。开发过程中使用了 GPT-6 系列辅助，但没有保存完整的逐轮模型与版本日志，因此不声称全部历史工作由某一个精确型号完成。软件运行时不需要 OpenAI 模型或接口，也不使用云端大语言模型处理照片。
+- **`reverse-engineer-anything` Skill 与 REA MCP Server：**来自 [morluto/rea](https://github.com/morluto/rea)，用于研究本机已安装软件的行为、打包功能和部分原生程序。历史记录包含 REA 6.5.0，本机安装的技能声明版本为 42。REA 自身的 MIT 许可不代表被研究的软件也获得同样授权。这些工具不随 LumaLab 分发，构建和运行也不需要安装它们。
+- **Hopper 及其 REA Bridge：**用于原生程序分析，是开发研究工具，属于专有软件，不作为开源依赖分发。
+- **Codex 应用工具、Computer Use / CUA、GitHub 集成、Python、SwiftPM 与 Xcode Command Line Tools：**用于构建、文件操作和验证，不是额外的软件运行库。
+- **Pillow 与 sharp：**用于本机测试图像检查和原创文档配图的渲染，不随软件打包，也不是构建前置依赖。
+
+安装过某项技能不等于实际使用过它。项目记录确认使用了 REA，不声称所有可用技能都参与了开发。内置演示图与图标来自仓库中的程序化绘图代码，不是下载的照片或图像生成模型输出。
+
+### 实现与公开范围
+
+Camera Raw / Lightroom 用作功能与行为参考，有限的只读原生分析为研究和数值实验提供线索。开发过程**不是正式的净室实现流程**，也不声称取得了 Adobe 源码或完整还原其算法。
+
+公开仓库不包含专有可执行文件、反编译列表、研究转储、原始测试照片或会话备份。LibRaw 上游包含的公开授权 Adobe DNG SDK 片段保留原始声明。
+
+LumaLab 不隶属于 Adobe、Apple、Microsoft、Google 或模型发布者。运行时不使用 Firefly、云端生成式移除、OpenCV 或 SciPy，也不承诺达到 Camera Raw 的性能或逐像素一致的结果。
