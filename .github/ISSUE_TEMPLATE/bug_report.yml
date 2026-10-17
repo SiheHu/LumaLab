@@ -1,0 +1,29 @@
+name: Bug report / Bug 反馈
+description: Report a reproducible photo-editing problem / 提交可复现问题
+title: "[Bug] "
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps / 操作步骤
+      description: Include the tool, input format, image dimensions and exact sequence.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual / 预期与实际
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment / 环境
+      placeholder: macOS version, Apple Silicon / Intel, LumaLab version or commit
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Optional sample / 可选样例
+      description: Only share photographs, masks and logs you have permission to publish. Remove private metadata. A synthetic sample is welcome.

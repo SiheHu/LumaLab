@@ -1,0 +1,13 @@
+name: Feature request / 功能建议
+description: Describe a photographic workflow / 描述具体编辑场景
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Workflow and problem / 场景与问题
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Suggested behavior / 希望怎样工作

@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "offlineInference": true,
+  "models": [
+    {
+      "file": "face-parsing-resnet18.onnx",
+      "sha256": "0d9bd318e46987c3bdbfacae9e2c0f461cae1c6ac6ea6d43bbe541a91727e33f",
+      "source": "https://github.com/yakhyo/face-parsing/releases/download/weights/resnet18.onnx",
+      "project": "https://github.com/yakhyo/face-parsing",
+      "license": "MIT",
+      "licenseFile": "LICENSE-face-parsing.txt",
+      "trainingDataset": "CelebAMask-HQ (per upstream model documentation)",
+      "input": "Float32 NCHW 1x3x512x512, RGB/255, ImageNet mean/std",
+      "output": "Float32 1x19x512x512 class logits",
+      "classes": [
+        "background",
+        "skin",
+        "left eyebrow",
+        "right eyebrow",
+        "left eye",
+        "right eye",
+        "glasses",
+        "left ear",
+        "right ear",
+        "earring",
+        "nose",
+        "mouth",
+        "upper lip",
+        "lower lip",
+        "neck",
+        "necklace",
+        "clothes",
+        "hair",
+        "hat"
+      ],
+      "optional": true,
+      "defaultDownload": false,
+      "licenseReview": "Repository MIT; trained on CelebAMask-HQ whose agreement limits the dataset and derived data to non-commercial research. Weight commercial/redistribution rights are not cleared; not redistributed by LumaLab."
+    },
+    {
+      "file": "skyseg-fp16.onnx",
+      "sha256": "74d87f4a69378a610a6be662f859c38cfbdfdd75ff74bbfc54842965ed6fc9f7",
+      "source": "https://huggingface.co/voyagerfromeast/skyseg/resolve/d76f97cf68f049654f087d78d071dfd7505b2561/skyseg_fp16.onnx",
+      "project": "https://github.com/xiongzhu666/Sky-Segmentation-and-Post-processing",
+      "conversion": "https://huggingface.co/voyagerfromeast/skyseg",
+      "license": "MIT (upstream and conversion model card)",
+      "licenseFile": "LICENSE-sky-segmentation.txt",
+      "input": "Float32 NCHW 1x3x320x320, RGB/255, ImageNet mean/std",
+      "output": "First output: 1x1x320x320 sky sigmoid matte; Float16 converted to Float32 at C ABI",
+      "sourceRevision": "d76f97cf68f049654f087d78d071dfd7505b2561"
+    },
+    {
+      "file": "lama-fp32.onnx",
+      "sha256": "1faef5301d78db7dda502fe59966957ec4b79dd64e16f03ed96913c7a4eb68d6",
+      "source": "https://huggingface.co/Carve/LaMa-ONNX/resolve/c3c0c9e468934d62e79c329e35d82dd09ff8c444/lama_fp32.onnx",
+      "project": "https://github.com/advimman/lama",
+      "conversion": "https://github.com/Carve-Photos/lama",
+      "modelCard": "https://huggingface.co/Carve/LaMa-ONNX",
+      "license": "Apache-2.0 (upstream and conversion model card)",
+      "licenseFile": "LICENSE-lama.txt",
+      "input": "Float32 NCHW image 1x3x512x512 RGB/255; mask 1x1x512x512 binary1=remove",
+      "output": "First output: Float32 1x3x512x512 RGB in [0,255]",
+      "processing": "Aspect-preserving resize with reflected context padding; conservative max reduction of mask; bilinear native ROI reconstruction; only mask-positive RGB replaced and original alpha retained. Caller applies feather/opacity once.",
+      "sourceRevision": "c3c0c9e468934d62e79c329e35d82dd09ff8c444"
+    },
+    {
+      "file": "selfie-skin.onnx",
+      "sha256": "35ec1ecd9ee7f85073c99c00020b7f6751b69506eeacf683bc8665f6117f85b0",
+      "source": "https://huggingface.co/senty-au/selfie_multiclass_256x256-ONNX/resolve/6db8421a7150ac20558f2c24675078eb3a1a04d0/onnx/model.onnx",
+      "sourceRevision": "6db8421a7150ac20558f2c24675078eb3a1a04d0",
+      "project": "https://developers.google.com/edge/mediapipe/solutions/vision/image_segmenter",
+      "conversion": "https://huggingface.co/senty-au/selfie_multiclass_256x256-ONNX",
+      "license": "Apache-2.0 (Google official Model Card and conversion publisher)",
+      "licenseFile": "LICENSE-selfie-skin.txt",
+      "input": "Float32 NHWC 1x256x256x3, RGB/255; stretch, no ImageNet normalization",
+      "output": "Float32 NHWC 1x256x256x6 logits, transposed to planar by the macOS adapter",
+      "classes": [
+        "background",
+        "hair",
+        "body-skin",
+        "face-skin",
+        "clothes",
+        "accessories"
+      ],
+      "limitations": "Selfie framing model; small/distant people, occlusion and fine edges may need manual refinement. Full image plus detected-person crops are combined; optional face parser refines faces.",
+      "modelCard": "https://storage.googleapis.com/mediapipe-assets/Model%20Card%20Multiclass%20Segmentation.pdf"
+    }
+  ],
+  "runtime": {
+    "name": "ONNX Runtime",
+    "version": "1.20.1",
+    "source": "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-osx-arm64-1.20.1.tgz",
+    "file": "libonnxruntime.1.20.1.dylib",
+    "sha256BeforeAppSigning": "530cdb5a0de774677d369a83ec8912b0242e9769acd12d34b61412ee6ae368ae",
+    "license": "MIT",
+    "licenseFile": "Vendor/ONNXRuntime/LICENSE",
+    "executionProvider": "CPUExecutionProvider",
+    "intraOpThreads": 4,
+    "archiveSHA256": "b678fc3c2354c771fea4fba420edeccfba205140088334df801e7fc40e83a57a"
+  },
+  "limitations": [
+    "Face location currently uses an Apple Vision adapter; semantic parsing uses the bundled ONNX model.",
+    "Subject/background and people use Apple Vision adapters in this macOS release. Saved coverage remains portable.",
+    "Sky model inference resolution is 320x320; fine trees/hair edges may need brush refinement.",
+    "No image uploads, telemetry, runtime model downloads, or Adobe model weights.",
+    "LaMa reconstructs selected content from surrounding context; results may invent incorrect structures or become soft for large ROIs.",
+    "LaMa inference is 512x512 and CPU-based in this build; it is a content-removal complement, not a Camera Raw performance or quality match."
+  ]
+}
